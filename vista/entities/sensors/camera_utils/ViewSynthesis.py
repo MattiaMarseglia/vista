@@ -92,6 +92,7 @@ class ViewSynthesis:
         trans: np.ndarray,
         rot: np.ndarray,
         imgs: Dict[str, np.ndarray],
+        make_trasparent_artificial_obj = False,
         depth: Optional[Dict[str, np.ndarray]] = None
     ) -> Tuple[np.ndarray, np.ndarray]:
         """ Synthesize RGB image at the novel viewpoint specified by ``trans`` and
@@ -168,7 +169,9 @@ class ViewSynthesis:
 
         # Overlay
         mask = (depth_objects != 0.).astype(np.uint8)[:, :, None]
-
+        ##### My Update #####
+        if make_trasparent_artificial_obj:
+            mask = np.array(0)
         if mask.sum() != 0:  # recoloring
             color_bg_mean = color_bg.mean(0).mean(0)
             color_objects_mean = (color_objects *

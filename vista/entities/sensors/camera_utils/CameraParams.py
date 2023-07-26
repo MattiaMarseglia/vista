@@ -44,11 +44,11 @@ class CameraParams(object):
         self._cy = params['cy']
 
         self._distortion = params['distortion']
-        self._quaternion = params['quaternion'].reshape(4, 1)
-        self._position = params['position'].reshape(3, 1)
+        self._quaternion = np.fromstring(params['quaternion'], sep=' ').reshape(4, 1)
+        self._position = np.fromstring(params['position'], sep=' ').reshape(3, 1)
         self._yaw = params['yaw'] if 'yaw' in params else None
 
-        self._roi = params['roi'].astype(np.int)
+        self._roi = np.fromstring(params['roi'], sep=' ').astype(np.int)
         self._roi_angle = params['roi_angle'] * np.pi / 180.
 
         self.__compute_other_forms()

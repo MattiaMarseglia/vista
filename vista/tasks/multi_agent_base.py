@@ -10,14 +10,28 @@ from ..entities.sensors.MeshLib import MeshLib
 from ..utils import logging, misc, transform
 
 
-def default_terminal_condition(task, agent_id, **kwargs):
+def default_terminal_condition(task, agent_id, lane, **kwargs):
     """ An example definition of terminal condition. """
 
     agent = [_a for _a in task.world.agents if _a.id == agent_id][0]
 
     def _check_out_of_lane():
-        road_half_width = agent.trace.road_width / 2.
-        return np.abs(agent.relative_state.x) > road_half_width
+        ##### My Update #####
+        if lane == "left":
+            road_right_width = agent.trace.road_width * (3/4)
+            road_left_width = agent.trace.road_width * (1/4)
+            return agent.relative_state.x < -road_left_width or agent.relative_state.x > road_right_width
+        ##### My Update #####
+        elif lane == "right":
+            road_right_width = agent.trace.road_width * (1/4)
+            road_left_width = agent.trace.road_width * (3/4)
+            return agent.relative_state.x < -road_left_width or agent.relative_state.x > road_right_width
+        ##### end #####
+        ##### My Update #####
+        else:
+            road_half_width = agent.trace.road_width / 2.
+            return np.abs(agent.relative_state.x) > road_half_width
+        ##### end #####
 
     def _check_exceed_max_rot():
         maximal_rotation = np.pi / 10.
@@ -126,15 +140,17 @@ class MultiAgentBase:
                 else:
                     raise NotImplementedError(
                         f'Unrecognized sensor type {sensor_type}')
-
         if n_agents > 1:
             assert self.config[
                 'mesh_dir'] is not None, 'Specify mesh_dir if n_agents > 1'
             self._meshlib = MeshLib(self.config['mesh_dir'])
-
+        try:
+            self.lane = self._config["lane"]
+        except:
+            self.lane = ""
         self.set_seed(0)
 
-    def reset(self) -> Dict:
+    def reset(self, starting_position_shift = None, make_trasparent_artificial_obj = False) -> Dict:
         """ Reset the environment. This involves regular world reset, randomly
         initializing ado agent in the front of the ego agent, and resetting
         the mesh library for all virtual agents.
@@ -152,8 +168,10 @@ class MultiAgentBase:
             agent.reset(new_trace_index,
                         new_segment_index,
                         new_frame_index,
+                        starting_position_shift = starting_position_shift,
                         step_sensors=False)
 
+        self.make_obj_trasparent = make_trasparent_artificial_obj
         # Randomly initialize ado agents in the front
         ref_dynamics = self.ego_agent.human_dynamics
         polys = [misc.agent2poly(self.ego_agent, ref_dynamics)]
@@ -216,8 +234,12 @@ class MultiAgentBase:
         infos_from_terminal_condition = dict()
         terminal_condition = self.config['terminal_condition']
         for agent in self.world.agents:
-            dones[agent.id], infos_from_terminal_condition[
-                agent.id] = terminal_condition(self, agent.id)
+            if agent.name == "ego-car":
+                dones[agent.id], infos_from_terminal_condition[
+                    agent.id] = terminal_condition(self, agent.id, self.lane)
+            else:
+                dones[agent.id], infos_from_terminal_condition[
+                    agent.id] = terminal_condition(self, agent.id, "center")
 
         # Compute reward
         rewards = dict()
@@ -296,7 +318,7 @@ class MultiAgentBase:
 
         # Step sensors
         for agent in self.world.agents:
-            agent.step_sensors()
+            agent.step_sensors(self.make_obj_trasparent)
 
     @property
     def config(self) -> Dict:

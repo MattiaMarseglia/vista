@@ -2,7 +2,6 @@ import os
 from typing import Optional, List, Any, Dict, Callable, Union, Tuple
 import numpy as np
 from scipy.interpolate import interp1d
-
 from .core_utils import MultiSensor, LabelSearch, TopicNames
 from ..utils import logging, misc
 
@@ -55,15 +54,20 @@ class Trace:
         self._trace_path: str = trace_path
         self._config: Dict = misc.merge_dict(trace_config, self.DEFAULT_CONFIG)
 
-        # Get function representation of state information
-        self._f_speed, self._f_curvature = self._get_states_func()
+        if self._config["noisy_trace"]:
+            # Get function representation of state information
+            self._f_speed, self._f_curvature = self._get_states_func(self._config["how_smooth"], self._config["max_yaw_r_value"])
+        else:
+            self._f_speed, self._f_curvature = self._get_states_func()
 
         # Divide trace to good segments based on video labels and timestamps
         self._multi_sensor: MultiSensor = MultiSensor(
             self._trace_path, self._config['master_sensor'])
         self._labels: LabelSearch = LabelSearch(*self._config['labels'])
-
-        good_frames, good_timestamps = self._divide_to_good_segments()
+        if self._config["min_speed"] is not None:
+            good_frames, good_timestamps = self._divide_to_good_segments(self._config["min_speed"])
+        else:
+            good_frames, good_timestamps = self._divide_to_good_segments()
         self._good_frames: Dict[str, List[int]] = good_frames
         self._good_timestamps: Dict[str, List[float]] = good_timestamps
 
@@ -265,7 +269,7 @@ class Trace:
 
         return good_frames, good_timestamps
 
-    def _get_states_func(self):
+    def _get_states_func(self, lp_n = None, max_yaw_rate = 1 / 3.):
         """ Read speed and IMU data from the dataset and perform 1D interpolation to convert
         discrete data points to continuous functions. Curvature is computed as yaw rate (from
         IMU) divided by speed.
@@ -283,14 +287,21 @@ class Trace:
                                          TopicNames.imu + '.csv'),
                             delimiter=',')
 
+        if lp_n:
+            yaw_rate = np.convolve(imu[:, 6], np.ones((lp_n,))/lp_n,'same')
+            speed_ = np.convolve(speed[:, 1],np.ones((lp_n,))/lp_n,'same')
+        else:
+            yaw_rate = imu[:, 6]
+            speed_ = speed[:, 1]
+
         # Obtain function representation of speed
-        f_speed = interp1d(speed[:, 0], speed[:, 1], fill_value='extrapolate')
+        f_speed = interp1d(speed[:, 0], speed_, fill_value='extrapolate')
 
         # Obtain function representation of curvature
         timestamps = imu[:, 0]
-        yaw_rate = imu[:, 6]
+
         curvature = yaw_rate / np.maximum(f_speed(timestamps), 1e-10)
-        good_curvature_inds = np.abs(curvature) < 1 / 3.
+        good_curvature_inds = np.abs(curvature) < max_yaw_rate
         f_curvature = interp1d(timestamps[good_curvature_inds],
                                curvature[good_curvature_inds],
                                fill_value='extrapolate')

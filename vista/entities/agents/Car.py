@@ -50,15 +50,16 @@ class Car(Entity):
         'steering_ratio': 14.7,
         'lookahead_road': False,
         'road_buffer_size': 200,
+        'steering_bound' : None,
     }
 
     def __init__(self, world: World, car_config: Dict) -> None:
         super(Car, self).__init__()
-
+        
         # Car configuration
         car_config = misc.merge_dict(car_config, self.DEFAULT_CONFIG)
         self._config = car_config
-
+        self.name = self._config["name"]
         # Pointer to the parent vista.World object where the agent lives
         self._parent: World = world
 
@@ -67,10 +68,13 @@ class Car(Entity):
 
         # A list of sensors attached to this agent (List[vista.Sensor]).
         self._sensors: List[BaseSensor] = []
-
+        
         # State dynamics for tracking the virtual and human agent
         self._relative_state: State = State()
-        self._ego_dynamics: StateDynamics = StateDynamics()
+        if car_config["steering_bound"] is not None:
+            self._ego_dynamics: StateDynamics = StateDynamics(steering_bound = car_config["steering_bound"])
+        else:
+            self._ego_dynamics: StateDynamics = StateDynamics()
         self._human_dynamics: StateDynamics = StateDynamics()
 
         # Properties of a car
@@ -161,6 +165,7 @@ class Car(Entity):
               segment_index: int,
               frame_index: int,
               initial_dynamics_fn: Optional[Callable] = None,
+              starting_position_shift = None,
               step_sensors: Optional[bool] = True) -> None:
         """ Reset the car. This involves pointing to somewhere in the dataset for later-on
         data-driven simulation, initializing vehicle state, and resetting all sensors attached
@@ -202,6 +207,9 @@ class Car(Entity):
                                    self.human_speed)
 
         initial_dynamics = self.human_dynamics.numpy().copy()
+        ##questo se si vuole partire su una corsia della strada
+        if starting_position_shift is not None:
+            initial_dynamics[0] = starting_position_shift
         if initial_dynamics_fn is not None:
             initial_dynamics = initial_dynamics_fn(*initial_dynamics)
         self.ego_dynamics.update(*initial_dynamics)
@@ -423,12 +431,15 @@ class Car(Entity):
         if update_road and hasattr(self, '_road'):
             self._update_road()
 
-    def step_sensors(self) -> None:
+    def step_sensors(self, make_obj_trasparent=False) -> None:
         """ Update sensor measurement given current state of the vehicle. """
         logging.info(f'Car ({self.id}) step sensors')
         self._observations = dict()
         for sensor in self.sensors:
-            self._observations[sensor.name] = sensor.capture(self.timestamp)
+            if make_obj_trasparent is True:
+                self._observations[sensor.name] = sensor.capture(self.timestamp, make_obj_trasparent)
+            else:
+                self._observations[sensor.name] = sensor.capture(self.timestamp)
 
     def _update_road(self) -> None:
         exceed_end = False

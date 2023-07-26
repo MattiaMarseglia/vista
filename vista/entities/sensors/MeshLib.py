@@ -7,7 +7,6 @@ import trimesh
 import pyrender
 from vista.utils import transform
 
-
 class MeshLib(object):
     """ Handle all meshes of actors (as opposed to scene/background itself) in the scene.
     It basically reads in all meshes with .obj extension, calibrates the meshes such that
@@ -59,7 +58,8 @@ class MeshLib(object):
                 tm = trimesh.load(fpath)
                 tm = list(
                     tm.geometry.values())  # convert from scene to trimesh
-                tm, mesh_dim = self._calibrate_tm(tm)
+                ### modified in the fork from tm, mesh_dim = self._calibrate_tm(tm) To Verify!!
+                tm, mesh_dim = self._calibrate_tm(tm[1:])
                 source = os.path.basename(
                     os.path.dirname(os.path.dirname(fpath)))
                 body_images = dict()
@@ -118,7 +118,6 @@ class MeshLib(object):
         body = np.argmax([v.triangles.shape[0] for v in tm_list
                           ])  # NOTE: hacky way to get body mesh
         color = np.random.choice(list(tm['extra']['body_images'].keys()))
-
         tm_list[body].visual.material.image = tm['extra']['body_images'][color]
         Ns = np.random.randint(10, 300)  # specular highlight (0-1000)
         tm_list[body].visual.material.kwargs.update(Ns=Ns)

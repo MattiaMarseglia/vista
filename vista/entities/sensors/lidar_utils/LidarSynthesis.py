@@ -48,6 +48,7 @@ class LidarSynthesis:
         ### Basic properties required for setting up the synthesizer including
         # the dimensionality and resolution of the image representation space
         self._res = np.array([yaw_res, pitch_res], dtype=np.float32)
+        print("input_yaw_fov: ",input_yaw_fov,"input_pitch_fov: ", input_pitch_fov)
         self._fov = np.array([input_yaw_fov, input_pitch_fov],
                              dtype=np.float32)
         self._fov_rad = self._fov * np.pi / 180.

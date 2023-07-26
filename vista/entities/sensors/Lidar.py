@@ -56,8 +56,8 @@ class Lidar(BaseSensor):
                 in_params, _ = pfile.parse_lidar(self.name)
                 self._view_synthesizers[trace] = LidarSynthesis(
                     load_model=True,
-                    input_yaw_fov=in_params['yaw_fov'],
-                    input_pitch_fov=in_params['pitch_fov'],
+                    input_yaw_fov=np.fromstring(in_params['yaw_fov'], sep=' '),
+                    input_pitch_fov=np.fromstring(in_params['pitch_fov'], sep=' '),
                     **self.config)
 
         else:

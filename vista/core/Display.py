@@ -185,7 +185,7 @@ class Display:
         self._road_frame_idcs.clear()
         self._road_frame_idcs.append(self.ref_agent.frame_index)
 
-    def render(self):
+    def render(self, on_lane_left = False, on_lane_right = False):
         """ Render an image that visualizes the simulator. This includes visualization
         of all sensors of every agent and a top-down view that depicts the road and all
         cars in the scene within a certain range. Note that it render visualization based
@@ -222,12 +222,38 @@ class Display:
             transform.compute_relative_latlongyaw(_v, ref_pose)
             for _v in self._road
         ])
-        road_half_width = self.ref_agent.trace.road_width / 2.
-        patch = LineString(road_in_ref).buffer(road_half_width)
-        patch = PolygonPatch(patch,
-                             fc=self._road_color,
-                             ec=self._road_color,
-                             zorder=1)
+        ##### My update #####
+        if on_lane_left:
+            road_right_width = self.ref_agent.trace.road_width * (1/4)
+            road_left_width = self.ref_agent.trace.road_width * (3/4)
+            patchSinistra = LineString(road_in_ref).buffer(-road_left_width, single_sided=True)
+            patchDestra = LineString(road_in_ref).buffer(road_right_width)
+            # Unisci le due regioni
+            patch = patchDestra.union(patchSinistra)
+            patch = PolygonPatch(patch,
+                                fc=self._road_color,
+                                ec=self._road_color,
+                                zorder=1)
+        elif on_lane_right:
+        ##### My update #####
+            road_right_width = self.ref_agent.trace.road_width * (1/4)
+            road_left_width = self.ref_agent.trace.road_width * (3/4)
+            patchSinistra = LineString(road_in_ref).buffer(road_left_width, single_sided=True)
+            patchDestra = LineString(road_in_ref).buffer(road_right_width)
+            # Unify the two region
+            patch = patchDestra.union(patchSinistra)
+            patch = PolygonPatch(patch,
+                                fc=self._road_color,
+                                ec=self._road_color,
+                                zorder=1)
+        else:
+            road_half_width = self.ref_agent.trace.road_width / 2.
+            patch = LineString(road_in_ref).buffer(road_half_width)
+            patch = PolygonPatch(patch,
+                                 fc=self._road_color,
+                                 ec=self._road_color,
+                                 zorder=1)
+        ##### end #####
         self._update_patch(self._axes['bev'], 'patch:road', patch)
 
         # Update agent in birds eye view

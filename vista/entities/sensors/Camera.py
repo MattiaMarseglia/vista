@@ -158,7 +158,7 @@ class Camera(BaseSensor):
                         camera_param = self._virtual_cam
                     self.view_synthesis.add_bg_mesh(camera_param)
 
-    def capture(self, timestamp: float, **kwargs) -> np.ndarray:
+    def capture(self, timestamp: float, make_obj_trasparent= None, **kwargs) -> np.ndarray:
         """ Synthesize RGB image based on current timestamp and transformation
         between the novel viewpoint to be simulated and the nominal viewpoint from
         the pre-collected dataset. Note that if there exists optical flow data in
@@ -247,8 +247,10 @@ class Camera(BaseSensor):
         if self.view_synthesis is not None:
             latlongyaw = self.parent.relative_state.numpy()
             trans, rot = transform.latlongyaw2vec(latlongyaw)
+            if make_obj_trasparent is None:
+                make_obj_trasparent = False
             rendered_frame, _ = self.view_synthesis.synthesize(
-                trans, rot, frames)
+                trans, rot, frames, make_obj_trasparent)
         else:
             rendered_frame = frames[self.name]
 
