@@ -3,6 +3,9 @@
 # Assegna i permessi di esecuzione allo script
 chmod +x "$0"
 
+# Inizializza la configurazione di Conda nel tuo shell
+eval "$(conda shell.bash hook)"
+
 # Creazione dell'ambiente conda da environment.yaml
 conda env create -f environment.yaml
 
@@ -11,3 +14,4 @@ conda activate vista_env
 
 # Installazione del package da GitHub utilizzando pip
 pip install git+https://github.com/MattiaMarseglia/vista.git
+
