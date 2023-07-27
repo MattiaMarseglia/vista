@@ -229,7 +229,7 @@ dependencies:
     - future==0.18.2
     - gast==0.3.3
     - googleapis-common-protos==1.53.0
-    - grpcio==1.32.0
+    # - grpcio==1.32.0
     - gviz-api==1.9.0
     - keras-unet==0.1.2
     - numpy==1.19.5
