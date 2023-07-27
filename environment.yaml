@@ -1,4 +1,4 @@
-name: vista
+name: vista_env
 channels:
   - pytorch
   - defaults
@@ -193,7 +193,7 @@ dependencies:
   - tk=8.6.10
   - toolz=0.11.1
   - torchaudio=0.8.1
-  - torchvision=0.2.2
+  # - torchvision=0.2.2
   - tornado=6.1
   - tqdm=4.62.0
   - typing_extensions=3.10.0.0
@@ -250,3 +250,4 @@ dependencies:
     - trimesh==3.9.27
     - typeguard==2.12.1
     - typing-extensions==3.7.4.3
+prefix: /home/mattia/miniconda3/envs/vista_env
